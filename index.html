@@ -1,0 +1,149 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Record Form</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+    form, .admin-section {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+    .hidden {
+      display: none;
+    }
+    .visible {
+      display: block;
+    }
+    @media (max-width: 600px) {
+      table, th, td {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Student Submission Form</h2>
+  <form id="student-form">
+    <input type="text" id="name" placeholder="Enter Name" required />
+    <input type="text" id="matric" placeholder="Enter Matric Number" required />
+    <button type="submit">Submit</button>
+  </form>
+
+  <div class="admin-section" style="margin-top: 40px;">
+    <h3>Admin Login</h3>
+    <input type="password" id="admin-password" placeholder="Enter admin password" />
+    <button onclick="checkPassword()">Login</button>
+
+    <div id="admin-panel" class="hidden">
+      <h3>Student Records</h3>
+      <table id="student-table">
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Name</th>
+            <th>Matric Number</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <button onclick="downloadPDF()">Export as PDF</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    const PASSWORD = "admin123";
+
+    document.getElementById("student-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const name = document.getElementById("name").value.trim();
+      const matric = document.getElementById("matric").value.trim();
+
+      if (name && matric) {
+        const records = JSON.parse(localStorage.getItem("records") || "[]");
+        records.push({ name, matric });
+        records.sort((a, b) => a.name.localeCompare(b.name));
+        localStorage.setItem("records", JSON.stringify(records));
+        alert("Submitted successfully!");
+        document.getElementById("student-form").reset();
+        if (document.getElementById("admin-panel").classList.contains("visible")) {
+          displayRecords();
+        }
+      }
+    });
+
+    function checkPassword() {
+      const input = document.getElementById("admin-password").value;
+      if (input === PASSWORD) {
+        document.getElementById("admin-panel").classList.remove("hidden");
+        document.getElementById("admin-panel").classList.add("visible");
+        displayRecords();
+      } else {
+        alert("Incorrect password!");
+      }
+    }
+
+    function displayRecords() {
+      const records = JSON.parse(localStorage.getItem("records") || "[]");
+      const tbody = document.querySelector("#student-table tbody");
+      tbody.innerHTML = "";
+      records.forEach((rec, i) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${i + 1}</td>
+          <td>${rec.name}</td>
+          <td>${rec.matric}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const records = JSON.parse(localStorage.getItem("records") || "[]");
+
+      doc.setFontSize(14);
+      doc.text("Student Records", 15, 15);
+      let y = 30;
+      doc.autoTable({
+        head: [['No.', 'Name', 'Matric Number']],
+        body: records.map((rec, index) => [index + 1, rec.name, rec.matric]),
+        startY: y
+      });
+
+      doc.save("student-records.pdf");
+    }
+  </script>
+
+</body>
+</html>
